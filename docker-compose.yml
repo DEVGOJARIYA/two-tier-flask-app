@@ -43,6 +43,7 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+      command: ["./wait-for-it.sh", "mysql:3306", "--", "flask run"]
 
 networks:
   twotier:
