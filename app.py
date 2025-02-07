@@ -1,6 +1,9 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_mysqldb import MySQL
+import time
+import MySQLdb
+
 
 app = Flask(__name__)
 
@@ -13,17 +16,35 @@ app.config['MYSQL_DB'] = os.environ.get('MYSQL_DB', 'default_db')
 # Initialize MySQL
 mysql = MySQL(app)
 
+
 def init_db():
-    with app.app_context():
-        cur = mysql.connection.cursor()
-        cur.execute('''
-        CREATE TABLE IF NOT EXISTS messages (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            message TEXT
-        );
-        ''')
-        mysql.connection.commit()  
-        cur.close()
+    retries = 5  # Number of retries
+    while retries > 0:
+        try:
+            with app.app_context():
+                cur = mysql.connection.cursor()
+                try:
+                    cur.execute('''
+                    CREATE TABLE IF NOT EXISTS messages (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        message TEXT
+                    );
+                    ''')
+                    mysql.connection.commit()
+                    print("Database initialized successfully!")
+                    return  # Exit function if successful
+                finally:
+                    cur.close()  # Ensure cursor is closed
+        except MySQLdb.OperationalError as e:  # Catch MySQL connection errors
+            print(f"Database connection failed: {e}, retrying in 5 seconds...")
+            retries -= 1
+            time.sleep(5)
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            return  # Exit on unexpected errors
+
+    print("Database connection failed after multiple attempts. Exiting...")
+
 
 @app.route('/')
 def hello():
