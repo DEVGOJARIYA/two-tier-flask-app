@@ -41,32 +41,34 @@ jobs:
           docker push $DOCKER_IMAGE
 
       # Step 6: Deploy to EC2 via SSH
-      - name: Deploy to EC2
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.EC2_HOST }}           # EC2 instance's IP or DNS
-          username: ${{ secrets.EC2_USER }}       # EC2 username (e.g., ec2-user or ubuntu)
-          key: ${{ secrets.EC2_SSH_KEY }}        # SSH private key (content of .pem file)
-          script: |
-            # Pull the latest Docker image for Flask app from Docker Hub
-            docker pull $DOCKER_IMAGE
+- name: Deploy to EC2
+  uses: appleboy/ssh-action@v1.0.0
+  with:
+    host: ${{ secrets.EC2_HOST }}           # EC2 instance's IP or DNS
+    username: ${{ secrets.EC2_USER }}       # EC2 username (e.g., ec2-user or ubuntu)
+    key: ${{ secrets.EC2_SSH_KEY }}         # SSH private key (content of .pem file)
+    script: |
+      # Set your Docker image name here (from Docker Hub or ECR)
+      export DOCKER_IMAGE=dev3103/flask-app:latest
 
-            # Pull MySQL image from Docker Hub
-            docker pull mysql:5.7
+      # Pull the latest Docker image for Flask app from Docker Hub
+      docker pull $DOCKER_IMAGE
 
-            # Run MySQL container (if you want MySQL in Docker on EC2)
-            docker run -d --name mysql -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=devops \
-              -e MYSQL_USER=admin -e MYSQL_PASSWORD=admin -p 3306:3306 mysql:5.7
+      # Pull MySQL image from Docker Hub
+      docker pull mysql:5.7
 
-            # Stop and remove the old Flask app container (if it's running)
-            docker stop flask-app || true
-            docker rm flask-app || true
+      # Run MySQL container
+      docker run -d --name mysql -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=devops \
+        -e MYSQL_USER=admin -e MYSQL_PASSWORD=admin -p 3306:3306 mysql:5.7
 
-            # Run Flask app container and link it to the MySQL container
-            docker run -d --name flask-app -p 5050:5000 \
-              -e MYSQL_HOST=mysql  \
-              -e MYSQL_USER=root \
-              -e MYSQL_PASSWORD=root \
-              -e MYSQL_DB=devops \
-              $DOCKER_IMAGE
+      # Stop and remove the old Flask app container (if it's running)
+      docker stop flask-app || true
+      docker rm flask-app || true
 
+      # Run Flask app container and link it to the MySQL container
+      docker run -d --name flask-app -p 5050:5000 \
+        -e MYSQL_HOST=mysql \
+        -e MYSQL_USER=root \
+        -e MYSQL_PASSWORD=root \
+        -e MYSQL_DB=devops \
+        $DOCKER_IMAGE
