@@ -3,7 +3,7 @@ name: CI/CD Pipeline to EC2 (Docker Image Build + Deploy)
 
 on:
   push:
-    branches: [main]  # Trigger pipeline on push to main branch
+    branches: [master]  # Trigger pipeline on push to main branch
 
 env:
   DOCKER_IMAGE: ${{ secrets.DOCKER_USERNAME }}/my-flask-app:latest  # Docker image tag
