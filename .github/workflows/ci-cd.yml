@@ -1,4 +1,3 @@
-
 name: CI/CD Pipeline to EC2 (Docker Image Build + Deploy)
 
 on:
