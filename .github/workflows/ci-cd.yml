@@ -2,7 +2,7 @@ name: CI/CD Pipeline to EC2 (Docker Image Build + Deploy)
 
 on:
   push:
-    branches: [master]  # Trigger pipeline on push to master branch
+    branches: [master]  # Trigger pipeline on push to main branch
 
 env:
   DOCKER_IMAGE: ${{ secrets.DOCKER_USERNAME }}/my-flask-app:latest  # Docker image tag
@@ -48,7 +48,11 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}         # SSH private key (content of .pem file)
           script: |
             # Create a custom Docker network
-            docker network create flask-network
+            docker network create flask-network || true
+
+            # Stop and remove the old MySQL container (if it's running)
+            docker stop mysql || true
+            docker rm mysql || true
 
             # Run MySQL container with the custom network
             docker run -d --name mysql --network flask-network -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=devops \
